@@ -1,0 +1,7 @@
+Data
+Processed_Data
+__pycache__
+*.pyc
+visionx_log.db
+*.db
+models
