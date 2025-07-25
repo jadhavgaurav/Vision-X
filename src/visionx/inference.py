@@ -9,7 +9,7 @@ from PIL import Image
 class FaceAnalysis:
     def __init__(self, yolo_path: str, arcface_path: str, providers=None):
         if providers is None:
-            providers = ['CUDAExecutionProvider','CPUExecutionProvider']
+            providers = ['ExecutionProvider','CPUExecutionProvider']
         
         # --- Load ONNX models from file ---
         self.face_detector = ort.InferenceSession(yolo_path, providers=providers)
