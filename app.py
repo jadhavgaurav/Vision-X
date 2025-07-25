@@ -23,11 +23,14 @@ RECOGNITION_THRESHOLD = 1.0
 SESSION_TIMEOUT = 2.0
 UNAUTHORIZED_DIRECTIONS = {'left', 'right', 'top'}
 FRAME_WIDTH, FRAME_HEIGHT = 640, 480
+RE_ID_THRESHOLD = 0.9
+RE_ID_CACHE_TIMEOUT = 10.0
 
 # --- Queues, Globals, and Helpers ---
 frame_queue = queue.Queue(maxsize=1)
 result_queue = queue.Queue(maxsize=1)
 active_sessions = {}
+re_id_cache = {}
 log_refresh_event = threading.Event()
 
 def get_exit_direction(x1, y1, x2, y2, fw, fh):
@@ -40,7 +43,7 @@ def get_exit_direction(x1, y1, x2, y2, fw, fh):
 
 # --- Background Worker Thread ---
 def face_processing_worker(face_analyzer, index, labels):
-    global active_sessions
+    global active_sessions, re_id_cache
     while True:
         try:
             frame = frame_queue.get(timeout=1.0)
@@ -55,8 +58,24 @@ def face_processing_worker(face_analyzer, index, labels):
 
                 name = "Unknown"
                 embedding = face_analyzer.get_embedding(face_img)
-                distances, indices = index.search(np.array([embedding], dtype=np.float32), k=1)
-                if distances[0][0] < RECOGNITION_THRESHOLD: name = labels[indices[0][0]]
+                embedding_np = np.array([embedding], dtype=np.float32)
+
+                distances, indices = index.search(embedding_np, k=1)
+                if distances[0][0] < RECOGNITION_THRESHOLD:
+                    name = labels[indices[0][0]]
+                else:
+                    best_match_name = None
+                    best_match_dist = float('inf')
+                    for re_id_name, data in list(re_id_cache.items()):
+                        dist = np.linalg.norm(embedding - data['embedding'])
+                        if dist < RE_ID_THRESHOLD and dist < best_match_dist:
+                            best_match_dist = dist
+                            best_match_name = re_id_name
+                    
+                    if best_match_name:
+                        name = best_match_name
+                        if name in re_id_cache:
+                            del re_id_cache[name]
                 
                 expression = face_analyzer.get_expression(face_img)
                 age = face_analyzer.get_age(face_img)
@@ -65,21 +84,29 @@ def face_processing_worker(face_analyzer, index, labels):
 
                 if name != "Unknown":
                     if name not in active_sessions:
-                        active_sessions[name] = {"entry_time": datetime.datetime.now(), "last_seen": time.time(), "last_pos": box}
+                        active_sessions[name] = {"entry_time": datetime.datetime.now(), "last_seen": time.time(), "last_pos": box, "last_embedding": embedding}
                     else:
                         active_sessions[name]["last_seen"] = time.time()
+                        active_sessions[name]["last_embedding"] = embedding
             
             exited_people = []
             for name, data in list(active_sessions.items()):
                 if time.time() - data["last_seen"] > SESSION_TIMEOUT:
                     direction = get_exit_direction(*data["last_pos"], FRAME_WIDTH, FRAME_HEIGHT)
                     log_exit_event(name, data["entry_time"], datetime.datetime.now(), direction)
-                    log_refresh_event.set() # Signal the main thread
+                    log_refresh_event.set()
+                    
+                    re_id_cache[name] = {'embedding': data['last_embedding'], 'timestamp': time.time()}
+
                     if direction in UNAUTHORIZED_DIRECTIONS: print(f"SECURITY ALERT: {name.upper()} used UNAUTHORIZED exit via {direction.upper()} side.")
                     exited_people.append(name)
             for name in exited_people:
                 if name in active_sessions: del active_sessions[name]
             
+            stale_entries = [name for name, data in re_id_cache.items() if time.time() - data['timestamp'] > RE_ID_CACHE_TIMEOUT]
+            for name in stale_entries:
+                del re_id_cache[name]
+
             if not result_queue.full():
                 result_queue.put({'faces': results, 'alert': unknown_person_in_frame})
 
@@ -109,14 +136,10 @@ def main():
 
     def refresh_logs():
         try:
-            # Clear existing table data (but not headers)
             dpg.delete_item("log_table", children_only=True, slot=1)
-            
             conn = sqlite3.connect("visionx_log.db")
             df = pd.read_sql_query("SELECT id, person_name, entry_time, exit_time, exit_direction FROM session_logs ORDER BY exit_time DESC", conn)
             conn.close()
-            
-            # Add new data rows to the existing table
             for i in range(df.shape[0]):
                 with dpg.table_row(parent="log_table"):
                     for item in df.iloc[i]:
@@ -124,7 +147,7 @@ def main():
         except Exception as e:
             print(f"Error refreshing logs: {e}")
 
-    # FINAL LAYOUT FIX: A simplified and explicit structure
+    # FINAL LAYOUT: A simplified and explicit structure
     with dpg.window(tag="main_window"):
         with dpg.group(horizontal=True):
             # Left Pane for Video
@@ -156,17 +179,14 @@ def main():
         if log_refresh_event.is_set():
             refresh_logs()
             log_refresh_event.clear()
-
         ret, frame = cap.read()
         if not ret: 
             dpg.render_dearpygui_frame()
             continue
         
         frame_for_processing = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
-        
         if not frame_queue.full():
             frame_queue.put(frame_for_processing)
-        
         try:
             processed_results = result_queue.get_nowait()
         except queue.Empty:
@@ -180,7 +200,6 @@ def main():
             color = (0, 250, 0) if name != "Unknown" else (0, 0, 255)
             cv2.rectangle(frame_for_processing, (x1, y1), (x2, y2), color, 1)
             cv2.putText(frame_for_processing, name, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 1)
-            
             cv2.putText(frame_for_processing, expression, (x1 + 5, y2 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
             cv2.putText(frame_for_processing, age, (x1 + 5, y2 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
 
