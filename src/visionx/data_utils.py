@@ -9,7 +9,7 @@ from PIL import Image
 import pillow_heif
 import rawpy
 
-from .inference import FaceAnalysis
+from inference import FaceAnalysis
 
 IMG_SIZE = (112, 112)
 

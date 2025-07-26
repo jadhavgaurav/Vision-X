@@ -9,13 +9,13 @@ from pathlib import Path
 from visionx.inference import FaceAnalysis
 
 # --- Configuration ---
-PROCESSED_DATA_DIR = "Processed_Data"
+PROCESSED_DATA_DIR = "Data/Processed"
 MODELS_DIR = "models"
 YOLO_MODEL_PATH = os.path.join(MODELS_DIR, "yolov8-face.onnx")
 ARCFACE_MODEL_PATH = os.path.join(MODELS_DIR, "arcface_w600k_r50.onnx")
 
-INDEX_FILE = "face_index.bin"
-LABELS_FILE = "labels.pkl"
+INDEX_FILE = "../resources/face_index.bin"
+LABELS_FILE = "../resources/labels.pkl"
 EMBEDDING_DIM = 512
 
 def create_face_index():

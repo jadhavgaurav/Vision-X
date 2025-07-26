@@ -14,8 +14,8 @@ import pickle
 import datetime
 import threading
 import queue
-from src.visionx.inference import FaceAnalysis
-from src.visionx.database import init_db, log_exit_event
+from inference import FaceAnalysis
+from database import init_db, log_exit_event
 
 # --- Constants & Configuration ---
 VIDEO_SOURCE = 0

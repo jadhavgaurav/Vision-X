@@ -1,8 +1,8 @@
 # In prepare_data.py
 
 import os
-from visionx.data_utils import process_and_augment_dataset
-from visionx.inference import FaceAnalysis
+from data_utils import process_and_augment_dataset
+from inference import FaceAnalysis
 
 # --- Configuration ---
 RAW_DATA_PATH = "Data"

@@ -118,8 +118,8 @@ def main():
     print("Loading models and face index...")
     providers = ['CUDAExecutionProvider','CPUExecutionProvider']
     face_analyzer = FaceAnalysis(yolo_path="models/yolov8-face.onnx", arcface_path="models/arcface_w600k_r50.onnx", providers=providers)
-    index = faiss.read_index("face_index.bin")
-    with open("labels.pkl", 'rb') as f:
+    index = faiss.read_index("resources/face_index.bin")
+    with open("resources/labels.pkl", 'rb') as f:
         labels = pickle.load(f)
     init_db()
     print("Resources loaded successfully.")
@@ -137,7 +137,7 @@ def main():
     def refresh_logs():
         try:
             dpg.delete_item("log_table", children_only=True, slot=1)
-            conn = sqlite3.connect("visionx_log.db")
+            conn = sqlite3.connect("database/visionx_log.db")
             df = pd.read_sql_query("SELECT id, person_name, entry_time, exit_time, exit_direction FROM session_logs ORDER BY exit_time DESC", conn)
             conn.close()
             for i in range(df.shape[0]):
