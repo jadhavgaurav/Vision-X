@@ -1,7 +1,34 @@
-Data
-Processed_Data
-__pycache__
+# Python cache
+__pycache__/
 *.pyc
-visionx_log.db
-*.db
-models
+*.pyo
+*.pyd
+
+# Poetry - Virtual environment
+# (Poetry usually creates the venv outside the project, 
+# but this is good practice if it's created locally)
+.venv/
+venv/
+
+# Build and distribution artifacts
+build/
+dist/
+*.egg-info/
+
+
+# Local Database File
+# This should not be committed as it contains runtime-generated data
+database/visionx_log.db
+
+# IDE and Editor specific files
+.vscode/
+.idea/
+*.DS_Store
+
+# Local data folders (never commit raw or processed data)
+data/
+Processed_Data/
+models/
+
+# Ignore local requirements.txt if generated for specific environments
+requirements.txt
