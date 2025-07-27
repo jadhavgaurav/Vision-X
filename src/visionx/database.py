@@ -3,7 +3,7 @@
 import sqlite3
 import datetime
 
-DB_FILE = "visionx_log.db"
+DB_FILE = "database/visionx_log.db"
 
 def init_db():
     """Initializes the SQLite database and creates the log table."""

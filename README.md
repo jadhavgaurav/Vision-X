@@ -67,13 +67,16 @@ The project requires a one-time data setup before running the main application.
 
 -   Launch the Dear PyGui desktop dashboard:
     ```bash
-    poetry run python app_dearpygui.py
+    poetry run python visionxApp.py
     ```
 
 ## Project Architecture
+
+![VisionX Architecture](resources/visionx-architecture.png)
 
 The application uses a multi-threaded producer-consumer architecture to maintain a high-performance, non-blocking GUI.
 
 1.  **Main Thread**: Handles the Dear PyGui interface, video capture from OpenCV, and rendering the UI. It captures a frame and places it in a queue.
 2.  **Worker Thread**: A dedicated background thread continuously pulls frames from the queue. It performs all heavy AI inference tasks (detection, recognition, expression, age) and session logic.
 3.  **Data Flow**: The worker thread sends the processed results (bounding boxes, names, analysis) back to the main thread via another queue, which then draws the information on the video feed. This ensures that the AI processing never freezes the user interface.
+
