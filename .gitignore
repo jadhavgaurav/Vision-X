@@ -30,5 +30,3 @@ data/
 Processed_Data/
 models/
 
-# Ignore local requirements.txt if generated for specific environments
-requirements.txt
