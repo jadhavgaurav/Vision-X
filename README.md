@@ -31,7 +31,7 @@ VisionX is a complete, real-time face recognition and analysis system built in P
 
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repo-link>
+    git clone https://github.com/jadhavgaurav/Vision-X
     cd VisionX
     ```
 
@@ -48,7 +48,7 @@ The project requires a one-time data setup before running the main application.
 ### Step 1: Add Face Images
 
 -   Place images of known individuals into the `data/raw/` directory. Each person must have their own subfolder named after them.
--   For example: `data/raw/Gaurav/image1.jpg`, `data/raw/Priya/photo.png`.
+-   For example: `data/raw/Gaurav/image1.jpg`, `data/raw/Tejas/photo.png`.
 -   For best results, use 5-10 high-quality images per person with varied angles and lighting.
 
 ### Step 2: Process Data and Build Face Index
